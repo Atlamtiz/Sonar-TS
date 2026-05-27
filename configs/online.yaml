@@ -1,0 +1,45 @@
+# Online querying configuration.
+
+llm:
+  model: "deepseek-v4-flash"
+  base_url: "https://api.deepseek.com"
+  temperature: 0.0
+  max_tokens: 4096
+  # Disable v4-flash's default reasoning trace — we want fast, deterministic
+  # code generation, not chain-of-thought (which consumes most of max_tokens
+  # without ever emitting content). Set to "enabled" if you ever want it.
+  thinking_mode: "disabled"
+  # Path to a file containing one API key per line. Each worker thread
+  # owns exactly one key for its entire lifetime. Relative paths are
+  # resolved against the framework root (PROJECT_ROOT).
+  api_keys_file: "configs/deepseek_api-key.txt"
+  # HTTP-level retry per LLM call (network/rate-limit). Distinct from the
+  # higher-level generator self-correction loop below.
+  http_max_attempts: 5
+  http_backoff_seconds: [1, 2, 4, 8, 16]
+
+executor:
+  # Subprocess timeout for one Python code execution.
+  timeout_seconds: 60
+  # Max regeneration attempts after a failure (planner is fixed at 1 call;
+  # this only bounds the code-generator self-correction loop).
+  max_regenerations: 3
+
+# Output shape validation per eval_metric. The executor classifies a result
+# as `shape_mismatch` when its actual shape violates these rules.
+shape_rules:
+  rel_acc:
+    expected: scalar           # number (int or float)
+  hit:
+    expected: timestamp        # parseable as datetime
+  iou:
+    expected: interval         # list of length 2, each parseable as datetime
+  set_f1:
+    expected: date_set         # list of dates, length 1..50
+    max_items: 50
+  report:
+    expected: report_dict      # dict {trend_segments, outliers}; string also accepted
+
+concurrency:
+  # Number of worker threads. Each thread holds one dedicated API key.
+  workers: 10

@@ -1,0 +1,65 @@
+You wrote a previous Python script that failed. Fix it.
+
+# WHAT WENT WRONG
+
+The previous code's status was: {error_status}
+
+Error / diagnostic message:
+
+{error_message}
+
+# OUTPUT REQUIREMENTS (unchanged)
+
+Same as before. Recall the per-eval_metric schema — this task's eval_metric
+is **`{eval_metric}`**.
+
+| eval_metric | _result schema |
+|-------------|----------------|
+| rel_acc     | a number |
+| hit         | "YYYY-MM-DD HH:MM:SS" string |
+| iou         | list of two timestamp strings |
+| set_f1      | list of date strings (≤ 50) |
+| report      | dict {{"trend_segments": [...], "outliers": [...]}} |
+
+Script must end with `print(json.dumps({{"_result": _result}}))`. Numpy /
+pandas types must be converted: .item(), .tolist(), .strftime().
+
+# CONTEXT (unchanged)
+
+## SCHEMA
+
+{schema}
+
+## EXPERIENCES
+
+{experiences}
+
+## QUESTION
+
+{question}
+
+## PLAN
+
+{plan}
+
+# PREVIOUS CODE
+
+```python
+{previous_code}
+```
+
+# COMMON ERROR REMEDIES
+
+- **exception**     → read the traceback, fix the offending line. Often a
+                      missing `.item()` on a numpy scalar, or a wrong
+                      channel-column quoting in raw_data.
+- **timeout**       → your code is too slow. Avoid scanning all of
+                      raw_data in a Python loop; use SQL aggregation or
+                      filter via feature tables first.
+- **format_invalid**→ you didn't print exactly one line of JSON to stdout,
+                      or the JSON was missing the "_result" key.
+- **shape_mismatch**→ `_result`'s shape doesn't match the eval_metric
+                      schema. Re-read the table above and match exactly.
+
+Output the corrected code now (single fenced ```python ... ``` block, no
+prose).

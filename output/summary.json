@@ -1,0 +1,137 @@
+{
+  "overall": {
+    "n": 1153,
+    "avg": 0.680633303766274
+  },
+  "by_level": {
+    "L1": {
+      "n": 274,
+      "avg": 0.9506973117669323
+    },
+    "L2": {
+      "n": 360,
+      "avg": 0.7395969898772111
+    },
+    "L3": {
+      "n": 419,
+      "avg": 0.44019595596144007
+    },
+    "L4": {
+      "n": 100,
+      "avg": 0.7358211391473491
+    }
+  },
+  "by_category": {
+    "Atomic Retrieval": {
+      "code": "AR",
+      "level": "L1",
+      "n": 216,
+      "avg": 0.961567634236969
+    },
+    "Sliding Window": {
+      "code": "SW",
+      "level": "L1",
+      "n": 58,
+      "avg": 0.9102147315336924
+    },
+    "Shape Identification": {
+      "code": "SI",
+      "level": "L2",
+      "n": 129,
+      "avg": 0.32759690296573185
+    },
+    "Periodicity Detection": {
+      "code": "PD",
+      "level": "L2",
+      "n": 120,
+      "avg": 0.976883558202731
+    },
+    "Subsequence Matching": {
+      "code": "SM",
+      "level": "L2",
+      "n": 111,
+      "avg": 0.961881881881882
+    },
+    "Composite Trend": {
+      "code": "CT",
+      "level": "L3",
+      "n": 220,
+      "avg": 0.3263636363636364
+    },
+    "Contextual Anomaly": {
+      "code": "CxA",
+      "level": "L3",
+      "n": 104,
+      "avg": 0.6966643360618558
+    },
+    "Causal Anomaly": {
+      "code": "CsA",
+      "level": "L3",
+      "n": 95,
+      "avg": 0.4230422589201094
+    },
+    "Insight Synthesis": {
+      "code": "IS",
+      "level": "L4",
+      "n": 100,
+      "avg": 0.7358211391473491
+    }
+  },
+  "by_subtask": {
+    "Global Aggregation": {
+      "metric": "rel_acc",
+      "n": 72,
+      "avg": 0.9994857150731387
+    },
+    "Temporal Localization": {
+      "metric": "hit",
+      "n": 72,
+      "avg": 0.9861111111111112
+    },
+    "Interval Discovery": {
+      "metric": "iou",
+      "n": 72,
+      "avg": 0.8991060765266572
+    },
+    "Sliding Window": {
+      "metric": "iou",
+      "n": 58,
+      "avg": 0.9102147315336924
+    },
+    "Shape Identification": {
+      "metric": "iou",
+      "n": 129,
+      "avg": 0.32759690296573185
+    },
+    "Periodicity Detection": {
+      "metric": "rel_acc",
+      "n": 120,
+      "avg": 0.976883558202731
+    },
+    "Subsequence Matching": {
+      "metric": "iou",
+      "n": 111,
+      "avg": 0.961881881881882
+    },
+    "Composite Trend": {
+      "metric": "set_f1",
+      "n": 220,
+      "avg": 0.3263636363636364
+    },
+    "Contextual Anomaly": {
+      "metric": "iou",
+      "n": 104,
+      "avg": 0.6966643360618558
+    },
+    "Causal Anomaly": {
+      "metric": "iou",
+      "n": 95,
+      "avg": 0.4230422589201094
+    },
+    "Insight Synthesis": {
+      "metric": "report",
+      "n": 100,
+      "avg": 0.7358211391473491
+    }
+  }
+}

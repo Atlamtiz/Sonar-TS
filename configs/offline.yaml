@@ -1,0 +1,24 @@
+# Offline feature-table construction.
+# Mirrors the original Sonar-TS reference settings.
+
+sax:
+  # Symbolic alphabet (alpha = 5 by default).
+  alphabet: ['a', 'b', 'c', 'd', 'e']
+
+# Three multi-scale views, each producing one feature table.
+#   freq          : window granularity (one feature row per window)
+#   resample_rule : PAA grid within each window (determines SAX length)
+views:
+  yearly:
+    freq: "YS"           # 1 row per year (year start)
+    resample_rule: "MS"  # 12 PAA segments / year (month start)
+  monthly:
+    freq: "MS"           # 1 row per month
+    resample_rule: "1D"  # ~30 PAA segments / month
+  daily:
+    freq: "1D"           # 1 row per day
+    resample_rule: "1h"  # 24 PAA segments / day
+
+# Parallelism for the batch scripts.
+parallel:
+  workers: 8

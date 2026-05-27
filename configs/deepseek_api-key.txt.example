@@ -1,0 +1,23 @@
+# One DeepSeek API key per line, no quotes.
+# 10 keys are recommended (one per worker thread); fewer is OK but you'll
+# need to lower `concurrency.workers` in configs/online.yaml accordingly.
+#
+# Lines starting with '#' are comments and are skipped.
+#
+# To use this template:
+#   1. Copy:  cp configs/deepseek_api-key.txt.example configs/deepseek_api-key.txt
+#   2. Replace the placeholders below with your real keys.
+#   3. The framework loads it automatically.
+#
+# Get keys at: https://platform.deepseek.com/api_keys
+
+sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

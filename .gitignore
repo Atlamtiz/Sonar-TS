@@ -1,0 +1,39 @@
+# ─── Python ─────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.ipynb_checkpoints/
+
+# ─── OS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Secrets — NEVER commit ─────────────────────────────────────────────────
+configs/deepseek_api-key.txt
+configs/*.key
+*.pem
+
+# ─── Benchmark data (download via scripts/download_dataset.py) ──────────────
+nlqtsbench/ts_data/
+
+# ─── Framework runtime artefacts (regenerable) ──────────────────────────────
+# databases/ is built by scripts/load_benchmark.py
+databases/
+
+# output/: commit small result artifacts (predict.json, summary.json,
+# per_task.json, figures/examples/) so visitors can see what the framework
+# produces. Only ignore the internal append-log and the 1153 generated PNGs.
+output/predict_partial.jsonl
+output/figures/*.png
+
+# ─── Cold-start runtime artefacts ───────────────────────────────────────────
+# train_data/ is built by cold_start/download_train_data.py
+cold_start/train_data/databases/
+cold_start/train_data/ts_data/
+cold_start/train_data/tasks.json
+cold_start/train_data/.cache/
+cold_start/traces/
+cold_start/summary.json
+cold_start/discovered_skills/
+

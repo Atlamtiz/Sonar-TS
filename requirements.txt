@@ -1,0 +1,18 @@
+# Sonar-TS framework dependencies.
+#
+# Install with:
+#     pip install -r requirements.txt
+
+# Core
+numpy>=1.24
+pandas>=2.0
+PyYAML>=6.0
+tqdm>=4.65
+requests>=2.31
+
+# Visualization (optional — main.py --figures only)
+plotly>=5.18
+kaleido>=0.2
+
+# Dataset download from HuggingFace (scripts/download_dataset.py)
+huggingface_hub>=0.20
