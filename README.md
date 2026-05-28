@@ -3,6 +3,7 @@
 <p align="center">
   <a href="https://arxiv.org/abs/2602.17001"><img src="https://img.shields.io/badge/arXiv-2602.17001-b31b1b.svg" alt="arXiv"></a>
   <a href="https://icml.cc/Conferences/2026"><img src="https://img.shields.io/badge/ICML-2026-1f6feb.svg" alt="ICML 2026"></a>
+  <a href="https://huggingface.co/spaces/mrtan/Sonar-TS-Demo"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Demo-Live-ff6f00.svg" alt="Live Demo"></a>
   <a href="https://huggingface.co/datasets/mrtan/NLQTSBench"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-mrtan%2FNLQTSBench-yellow.svg" alt="HuggingFace Dataset"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"></a>
 </p>
