@@ -56,7 +56,7 @@ Sonar-TS is a three-stage pipeline:
 ### 1. Install dependencies
 
 ```bash
-git clone https://github.com/<you>/Sonar-TS.git
+git clone https://github.com/Atlamtiz/Sonar-TS.git
 cd Sonar-TS
 conda create -n sonarts python=3.11 -y && conda activate sonarts
 pip install -r requirements.txt
