@@ -12,6 +12,16 @@
   <b>Official implementation of the Sonar-TS paper (ICML 2026).</b>
 </p>
 
+## 🎬 Promo Video
+
+<!-- Inline player (one-time web step): edit this README on github.com (✏️) and
+     drag docs/sonar-ts_promo.mp4 onto the empty line right below this comment.
+     GitHub uploads it and inserts a user-attachments URL that renders as an
+     embedded player. Commit from the web editor, then delete the fallback
+     link line below. -->
+
+[▶️ **Watch the 75-second promo**](docs/sonar-ts_promo.mp4) — why querying time series in natural language is hard, how *Search-Then-Verify* solves it, and where it applies.
+
 ## 📖 Introduction
 
 Time-series data is everywhere in industry. Common examples include temperature readings, stock prices, and factory sensor logs. When a non-expert wants to extract specific information from such data, they often hit a serious wall. For instance, they might ask: *"In the past month, on which day did the temperature rise sharply between 10 a.m. and 3 p.m. and then drop just as quickly?"* Today, no existing method can directly answer this kind of natural-language question over a real time-series database.
