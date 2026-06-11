@@ -14,13 +14,15 @@
 
 ## 🎬 Promo Video
 
-<!-- Inline player (one-time web step): edit this README on github.com (✏️) and
-     drag docs/sonar-ts_promo.mp4 onto the empty line right below this comment.
-     GitHub uploads it and inserts a user-attachments URL that renders as an
-     embedded player. Commit from the web editor, then delete the fallback
-     link line below. -->
+<p align="center">
+  <a href="docs/sonar-ts_promo.mp4">
+    <img src="docs/promo_teaser.gif" alt="Sonar-TS in action: ask in natural language, search by shape, verify every candidate, get the answer" width="90%">
+  </a>
+</p>
 
-[▶️ **Watch the 75-second promo**](docs/sonar-ts_promo.mp4) — why querying time series in natural language is hard, how *Search-Then-Verify* solves it, and where it applies.
+<p align="center">
+  <sub>▶️ Click the teaser to watch the <a href="docs/sonar-ts_promo.mp4"><b>full 75-second promo with sound</b></a> — why querying time series in natural language is hard, how <i>Search-Then-Verify</i> solves it, and where it applies.</sub>
+</p>
 
 ## 📖 Introduction
 
