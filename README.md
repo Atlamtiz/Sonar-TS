@@ -48,6 +48,7 @@ This version extends the conference paper in three ways:
 | NLQTSBench | `nlqtsbench/tasks.json` | 1,153 | one record per query; raw CSVs from [HuggingFace](https://huggingface.co/datasets/mrtan/NLQTSBench) via `scripts/download_dataset.py` |
 | NLQTSBench-Styles | `nlqtsbench/styles/nlqtsbench_styles.json` | 1,153 × 4 | the same records with a `question_styles` field; `styles_provenance.json`, `STYLE_SPEC.md`, `JUDGE_SPEC.md` |
 | NLQTSBench-Lite | `nlqtsbench/lite/` | 500 | short-context queries in the same format, series included (`ts_data/`) |
+| Training queries | [HuggingFace](https://huggingface.co/datasets/mrtan/NLQTSBench-train-v2) | 500 + 190 | the queries the skills are distilled from: `general/` (all 11 sub-tasks) and `composite_trend/`, each with `tasks.json`, `ts_data/` and `splits.json`; disjoint from NLQTSBench |
 
 The task format and the five metrics are described in [`nlqtsbench/README.md`](nlqtsbench/README.md).
 
@@ -85,7 +86,14 @@ A query such as *rapid rise, then slow rise, then steady stable* becomes a regul
 
 [`cold_start_stream/`](cold_start_stream/) distills skills from training queries without labels at run time: `run.py` streams the queries through the reflect-draft-review loop, `select.py` picks the library with the best validation score, and `eval.py` evaluates a library on a benchmark. The six skills used in the paper are in [`sonar_ts/skills/library/`](sonar_ts/skills/library/), one Markdown document each; the planner reads their descriptions and names the ones a query needs.
 
+The training queries are released as [NLQTSBench-train-v2](https://huggingface.co/datasets/mrtan/NLQTSBench-train-v2). Each of its two folders becomes a training directory in the same way as a benchmark; `splits.json` gives the `train` ids for `run.py` and the `valid` ids for `select.py`.
+
 ```bash
+huggingface-cli download mrtan/NLQTSBench-train-v2 --repo-type dataset --local-dir train_v2
+export SONAR_BENCHMARK_DIR=train_v2/general SONAR_DATABASES_DIR=train_v2/general/databases
+python -m scripts.load_benchmark && python -m scripts.build_index
+python -c "import json; s = json.load(open('train_v2/general/splits.json')); [json.dump(v, open(f'train_v2/general/{k}_ids.json', 'w')) for k, v in s.items()]"
+
 python -m cold_start_stream.run --help
 python -m cold_start_stream.select --help
 python -m cold_start_stream.eval --help
