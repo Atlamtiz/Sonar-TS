@@ -1,0 +1,93 @@
+## CODEBOOK of the symbolic column `sym`   (symbolization: 1d-SAX)
+
+USE IT FOR every question about the FORM of the curve: rises, falls, flat stretches,
+peaks, dips, plateaus, steps, calm vs. choppy stretches, and sequences of these
+("rises, then stays flat, then falls"). When a question describes a shape or a
+trend pattern, search with this column FIRST, then verify on raw data.
+
+### 1. How the string is built
+
+The window is cut into equal segments; a straight line is fitted to each segment and
+the segment becomes one TOKEN of 2 characters:  [level][slope]
+    daily_feature     24 tokens, one per hour
+    monthly_feature   28-31 tokens, one per day
+    yearly_feature    12 tokens, one per month
+  level  a < b < c < d < e   the mean of the segment RELATIVE TO THE WINDOW ITSELF
+                             (z-score inside the window): a = far below the window's
+                             mean, c = near the mean, e = far above it
+  slope  A < B < C < D       the slope of the fitted line on the same window-relative
+                             scale: A = clearly falling, B = slightly falling or flat,
+                             C = slightly rising or flat, D = clearly rising.
+                             There is no separate "flat" letter.
+sym_len is the number of tokens; the string has 2 * sym_len characters. Token i
+(0-based) starts at character 2*i and covers one segment (1 hour / 1 day / 1 month): in a
+complete window, the segment that begins i segments after window_start. A window at the very
+start or end of the series can be incomplete: it has fewer tokens, and in the FIRST window of
+the series token 0 is the segment of the first timestamp of raw_data, not window_start.
+Consequences:
+- sym describes shape, not absolute level. An "e" in one window and an "e" in another
+  window are different values. Compare levels across windows with avg_val / min_val /
+  max_val, never with letters.
+- Every window is stretched to its own scale, so a window in which almost nothing
+  happens still shows the full range of symbols (noise looks like shape). Combine sym
+  with std_val or (max_val - min_val) to tell a real movement from noise.
+- A perfectly constant window is all "cB".
+
+### 2. How shapes look   (tokens separated by spaces here only for reading)
+
+    rise             levels climb and slope letters are C / D   "aD bD cD dD eC"
+    fall             levels descend and slope letters are A / B "eA dA cA bA aB"
+    flat / stable    the level stays, slope letters are B / C, AT ANY LEVEL:
+                     "eB eC eB" after a rise, "aC aB aC" after a fall, "cB cC cB"
+    fast change      D (or A) tokens, the climb takes few tokens          "aC aD eD eC"
+    slow change      (reading hint) C (or B) tokens while the level climbs slowly
+                                                                 "aC bC bC cC dC eC"
+    peak / spike     a D token, a high level, an A token        "bC bD eC bA bB"
+    dip / valley     an A token, a low level, a D token         "dB dA aB dD dC"
+    high plateau     a long run of d / e levels with B / C slopes "bD eC eB eC eB bA"
+    low plateau      a long run of a / b levels with B / C slopes "dA aB aC aB aC dD"
+    step up / down   a low run, one or two D tokens, a high run (or the reverse)
+    calm vs. choppy  (reading hint) slope letters stay B / C vs. jump between A and D
+A sequence of shapes is the patterns of its parts, in the order the question gives.
+
+### 3. How to search
+
+Two SQL functions are registered on `conn` (Python `re.search` semantics), in addition
+to LIKE and GLOB:  `sym REGEXP ?`  and  `regexp_like(sym, ?)`.
+
+    SELECT window_start, window_end, sym, slope, std_val FROM daily_feature
+     WHERE channel_id = ? AND window_start >= ? AND window_start < ?
+       AND sym REGEXP ?
+
+Writing patterns — one token = exactly 2 characters, level then slope. Write every slot
+as a character class and leave a slot as [a-e] or [A-D] when the question says nothing
+about it:
+      ANY token          [a-e][A-D]          skip whole tokens   (?:[a-e][A-D])*?
+      a rising segment   [a-e][CD]           clearly rising      [a-e]D
+      a falling segment  [a-e][AB]           clearly falling     [a-e]A
+      a run of them      (?:[a-e][CD])+
+- the level letters work exactly as in SAX: low = [ab][A-D], high = [de][A-D]; a rise is
+  "low levels somewhere before high levels":  [ab][A-D](?:[a-e][A-D])*?[de][A-D]
+- a flat part is a run of n tokens whose level stays, at WHATEVER level the previous part
+  ended:  (?:a[A-D]){n,}|(?:b[A-D]){n,}|(?:c[A-D]){n,}|(?:d[A-D]){n,}|(?:e[A-D]){n,}
+- join the parts of a multi-part shape with the whole-token skip, in the order of the
+  question; never with ".*", which can stop in the middle of a token;
+- the slope letter gives two degrees per direction (D vs. C, A vs. B). It can hint at
+  "rapid" vs. "slow", but there is no symbol for steady vs. fluctuating: measure words
+  of degree on raw data in the verify step.
+Keep the pattern LOOSE. sym is an approximation: the search must not lose true answers
+(recall first); exactness comes from the verify step. Do not anchor with ^ or $. Never write
+"\." — sym contains no dot, so an escaped dot matches nothing; use the character classes
+above instead of the wildcard. You can also read the sym strings into Python and use
+`re.finditer` to get the POSITION of a match; character position p is token p // 2,
+which maps back to time through the token rule above.
+
+### 4. Choosing the table
+
+Pick the table by the DURATION OF THE SHAPE ITSELF, never by the span of the question's
+time range: a shape lasting hours -> daily_feature (1 token = 1 hour); lasting days ->
+monthly_feature (1 token = 1 day); lasting months -> yearly_feature. "Days during 2020
+that show a rise, then a fall" asks for shapes INSIDE single days, so it is daily_feature
+searched over the year 2020 — the year is the search range, not the shape's duration. A shape must span at least 2-3 tokens to
+be visible. A shape can straddle a window border: when that matters, also look at the
+neighbouring windows, or verify on a raw slice that extends beyond the window.

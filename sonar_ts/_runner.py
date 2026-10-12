@@ -7,6 +7,7 @@ import math
 import re
 import sqlite3
 import sys
+import time
 from datetime import datetime, timedelta
 
 import numpy as np  # noqa: F401
@@ -22,7 +23,38 @@ def _main() -> None:
     with open(code_path, "r", encoding="utf-8") as f:
         user_code = f.read()
 
-    conn = sqlite3.connect(db_path)
+    # SQL time of the script (execute + fetch of every statement), reported on
+    # stderr at the end as SONAR_SQL_SECONDS=<seconds>; the executor reads it.
+    _sql_clock = [0.0]
+
+    class _TimedCursor(sqlite3.Cursor):
+        def _timed(self, fn, *a, **k):
+            t0 = time.perf_counter()
+            try:
+                return fn(*a, **k)
+            finally:
+                _sql_clock[0] += time.perf_counter() - t0
+
+        def execute(self, *a, **k):
+            return self._timed(super().execute, *a, **k)
+
+        def executemany(self, *a, **k):
+            return self._timed(super().executemany, *a, **k)
+
+        def fetchall(self):
+            return self._timed(super().fetchall)
+
+        def fetchmany(self, *a, **k):
+            return self._timed(super().fetchmany, *a, **k)
+
+        def fetchone(self):
+            return self._timed(super().fetchone)
+
+    class _TimedConnection(sqlite3.Connection):
+        def cursor(self, factory=_TimedCursor):
+            return super().cursor(factory)
+
+    conn = sqlite3.connect(db_path, factory=_TimedConnection)
     conn.row_factory = sqlite3.Row
 
     _re_cache: dict[str, "re.Pattern[str]"] = {}
@@ -59,6 +91,8 @@ def _main() -> None:
         exec(compile(user_code, code_path, "exec"), globals_for_code)
     finally:
         conn.close()
+        sys.stderr.write(f"\nSONAR_SQL_SECONDS={_sql_clock[0]:.4f}\n")
+        sys.stderr.flush()
 
 
 if __name__ == "__main__":

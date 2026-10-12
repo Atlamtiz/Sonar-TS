@@ -1,4 +1,5 @@
-"""Offline feature-table construction."""
+"""Offline feature-table construction: per-window statistics, the SAX string
+(`sax`), and the MOSO four-tuple string (`sym`, see `sonar_ts.symbolize`)."""
 
 from __future__ import annotations
 
@@ -7,6 +8,8 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
+
+from .symbolize import encode_all
 
 
 def generate_breakpoints(alphabet_size: int) -> np.ndarray:
@@ -47,7 +50,12 @@ def compute_features_for_view(
     resample_rule: str,
     alphabet: List[str],
     breakpoints: np.ndarray,
+    table: str | None = None,
+    symbolization: str = "moso",
 ) -> pd.DataFrame:
+    """One feature table. With `symbolization="moso"` (the default) and `table` one of
+    `daily_feature`, `monthly_feature`, `yearly_feature`, every row also carries the MOSO
+    string of the window in `sym` and its token count in `sym_len`."""
     if raw_long.empty:
         return pd.DataFrame()
 
@@ -95,6 +103,10 @@ def compute_features_for_view(
         feat["slope"] = slope_series.loc[common]
         feat["sax"] = sax_series.loc[common]
         feat["sax_len"] = feat["sax"].str.len()
+        if symbolization == "moso" and table is not None:
+            enc = encode_all(series, table)
+            feat["sym"] = enc["moso"].reindex(common)
+            feat["sym_len"] = enc["n_seg"].reindex(common)
         pieces.append(feat.reset_index(drop=True))
 
     if not pieces:
@@ -103,25 +115,33 @@ def compute_features_for_view(
     out = pd.concat(pieces, ignore_index=True)
     out["window_start"] = out["window_start"].dt.strftime("%Y-%m-%d %H:%M:%S")
     out["window_end"] = out["window_end"].dt.strftime("%Y-%m-%d %H:%M:%S")
-    return out[["channel_id", "window_start", "window_end",
-                "min_val", "max_val", "avg_val", "std_val",
-                "slope", "sax_len", "sax"]]
+    cols = ["channel_id", "window_start", "window_end",
+            "min_val", "max_val", "avg_val", "std_val",
+            "slope", "sax_len", "sax"]
+    if "sym" in out.columns:
+        out["sym_len"] = out["sym_len"].astype("Int64")
+        cols += ["sym_len", "sym"]
+    return out[cols]
 
 
 def compute_all_features(
     raw_long: pd.DataFrame,
     view_config: Dict[str, Dict[str, str]],
     alphabet: List[str],
+    symbolization: str = "moso",
 ) -> Dict[str, pd.DataFrame]:
     breakpoints = generate_breakpoints(len(alphabet))
     out: Dict[str, pd.DataFrame] = {}
     for view_name, settings in view_config.items():
+        table = f"{view_name}_feature"
         df = compute_features_for_view(
             raw_long,
             freq=settings["freq"],
             resample_rule=settings["resample_rule"],
             alphabet=alphabet,
             breakpoints=breakpoints,
+            table=table,
+            symbolization=symbolization,
         )
-        out[f"{view_name}_feature"] = df
+        out[table] = df
     return out

@@ -6,12 +6,18 @@ from .storage import ALL_TABLES, TaskDatabase
 
 
 def build_schema_text(task_id: str) -> str:
-    db = TaskDatabase(task_id)
+    # Read-only: this runs for every item of a run, against database trees the
+    # project may declare read-only.
+    db = TaskDatabase(task_id, read_only=True)
     db.connect()
     try:
-        lines = [f"# {task_id}"]
+        # Header stays neutral on purpose: the task id spells out the
+        # benchmark sub-task, which must never reach a prompt.
+        lines = ["# task database"]
         for table in ALL_TABLES:
             cols = db.table_columns(table)
+            if not cols:          # the table does not exist in this database
+                continue
             formatted_cols = []
             for c in cols:
                 if table == "raw_data" and c != "timestamp":

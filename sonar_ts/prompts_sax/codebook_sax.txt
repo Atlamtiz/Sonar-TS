@@ -1,0 +1,79 @@
+## CODEBOOK of the symbolic column `sax`   (symbolization: SAX)
+
+USE IT FOR every question about the FORM of the curve: rises, falls, flat stretches,
+peaks, dips, plateaus, steps, calm vs. choppy stretches, and sequences of these
+("rises, then stays flat, then falls"). When a question describes a shape or a
+trend pattern, search with this column FIRST, then verify on raw data.
+
+### 1. How the string is built
+
+The window is cut into equal segments and the mean of each segment becomes one letter:
+    daily_feature     24 letters, one per hour
+    monthly_feature   28-31 letters, one per day
+    yearly_feature    12 letters, one per month
+Letters a < b < c < d < e are levels RELATIVE TO THE WINDOW ITSELF (z-scores of the
+segment means within that window): a = far below the window's mean, c = near the
+mean, e = far above it. Letter i (0-based) covers the time from
+window_start + i * (window length / sax_len) up to the next letter.
+Consequences:
+- sax describes shape, not absolute level. An "e" in one window and an "e" in another
+  window are different values. Compare levels across windows with avg_val / min_val /
+  max_val, never with letters.
+- Every window is stretched to its own scale, so a window in which almost nothing
+  happens still shows letters from a to e (noise looks like shape). Combine sax with
+  std_val or (max_val - min_val) to tell a real movement from noise.
+- A perfectly constant window is all "c".
+
+### 2. How shapes look
+
+    rise             letters climb from left to right          "aabcdee"   "bbcde"
+    fall             letters descend                           "eedcbaa"
+    flat / stable    a run of one letter, or of two neighbours, AT ANY LEVEL: a flat
+                     stretch after a rise sits high ("abcdeeeee"), after a fall it sits
+                     low ("edcbaaaaa"), in an uneventful window it sits in the middle
+                     ("cccccc", "dcddcd")
+    fast change      (reading hint) the climb or descent takes few letters   "aaaeee"
+    slow change      (reading hint) it takes many letters                    "aabbccdde"
+    peak / spike     low, briefly high, low again              "bbbebbb"   "aacecaa"
+    dip / valley     high, briefly low, high again             "dddaddd"
+    high plateau     a long run of d / e between lower letters "bbeeeeeebb"
+    low plateau      a long run of a / b between higher letters "ddaaaaaadd"
+    step up / down   a low run then a high run (or the reverse) "aaaaaeeeee" "eeeeebaaaa"
+    calm vs. choppy  (reading hint) few letter changes vs. many back-and-forth
+                                                               "cccdcccc"  "aecbdaeb"
+A sequence of shapes is the patterns of its parts, in the order the question gives.
+
+### 3. How to search
+
+Two SQL functions are registered on `conn` (Python `re.search` semantics), in addition
+to LIKE and GLOB:  `sax REGEXP ?`  and  `regexp_like(sax, ?)`.
+
+    SELECT window_start, window_end, sax, slope, std_val FROM daily_feature
+     WHERE channel_id = ? AND window_start >= ? AND window_start < ?
+       AND sax REGEXP ?
+
+Writing patterns:
+- put only the DIRECTIONS and their ORDER into the pattern (rise / fall / flat, peak /
+  dip). Do NOT encode words of degree (rapid, slow, steady, fluctuating, large, small)
+  in the pattern: on real, noisy data a slow rise is not a clean staircase, and a
+  pattern that insists on one loses true answers. Degree is measured on raw data in
+  the verify step;
+- use letter classes for tolerance: low = [ab], high = [de], middle = [bcd];
+- a rise is "low letters somewhere before high letters":  [ab].*[de]   (a fall is the reverse);
+- a flat part is a run of at least n equal letters at WHATEVER level the previous part
+  ended:  a{n,}|b{n,}|c{n,}|d{n,}|e{n,}   with n = the duration you need, counted in
+  letters of the table you query. Never assume that a flat part sits at "c";
+- join the parts of a multi-part shape with ".*" in the order of the question.
+Keep the pattern LOOSE. sax is an approximation: the search must not lose true answers
+(recall first); exactness comes from the verify step. You can also read the sax strings
+into Python and use `re.finditer` to get the POSITION of a match; position i maps back
+to time through the letter rule above, which gives a first estimate of where inside
+the window the shape starts and ends.
+
+### 4. Choosing the table
+
+Pick the table whose letter length fits the time scale of the shape: a shape lasting
+hours -> daily_feature (1 letter = 1 hour); lasting days -> monthly_feature (1 letter
+= 1 day); lasting months -> yearly_feature. A shape must span at least 2-3 letters to
+be visible. A shape can straddle a window border: when that matters, also look at the
+neighbouring windows, or verify on a raw slice that extends beyond the window.

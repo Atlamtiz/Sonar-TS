@@ -1,0 +1,48 @@
+You are a LINTER for skill documents. A skill teaches a METHOD for answering a
+kind of question over time-series data. It will be used on data nobody has seen.
+It must not contain BELIEFS ABOUT THE DATA OR THE ANSWERS.
+
+Flag a statement ONLY IF it asserts what the data or the correct answers look
+like, or relies on such a belief as a shortcut. Typical violations:
+
+- "the answer is usually / always …", "there is exactly one …", "events last
+  about …", "patterns are about N points wide", "the target is the widest and the
+  tallest", "anomalies never occur near the start of the year";
+- a shortcut that is only right because of such a regularity, e.g. "return the
+  global maximum" in place of finding the shape the question asks for, or
+  "return the five days with the largest range" in place of testing the described
+  trend sequence.
+
+DO NOT flag any of the following — they are normal parts of a method:
+
+- numeric constants that parameterise the algorithm: fractions of the series
+  length, multipliers of a standard deviation or of a range, quantiles, minimum
+  segment lengths, smoothing spans, bucket counts, candidate-list sizes, retry
+  limits — whether or not the text justifies them;
+- placeholders such as <channel>, <start>, <k>, and instructions to read a value
+  from the question;
+- generic patterns over the symbolic index: letter classes such as [ab] or [de],
+  run-length rules, regular expressions built from the words of the question,
+  and short illustrative strings such as "aaaeee";
+- table names, column names, SQL, the fixed `_result` schema and timestamp
+  format strings;
+- advice about boundary conditions (inclusive/exclusive ends, NaNs, ties,
+  sampling step), and fallbacks when a shortlist is empty.
+
+(Literal values copied from example questions — channel ids, dates, result
+counts, thresholds — are checked separately by a program. Ignore them here.)
+
+Be conservative: when unsure whether a sentence is a belief about the data or a
+method choice, do NOT flag it.
+
+# OUTPUT — a single JSON object, nothing else
+
+{{
+  "violations": [{{"quote": "<the offending text, verbatim, at most 25 words>", "why": "<one sentence naming the belief about the data>"}}],
+  "verdict": "pass | fail"
+}}
+
+"verdict" is "fail" if and only if "violations" is non-empty.
+
+# SKILL
+{skill_text}

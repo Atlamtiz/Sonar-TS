@@ -1,218 +1,149 @@
-<h1 align="center">Sonar-TS: Search-Then-Verify Natural Language Querying for Time Series Databases</h1>
+<h1 align="center">Sonar-TS: Natural Language Querying over Time Series Databases with Grounded Morphological Symbolization</h1>
 
 <p align="center">
   <a href="https://arxiv.org/abs/2602.17001"><img src="https://img.shields.io/badge/arXiv-2602.17001-b31b1b.svg" alt="arXiv"></a>
-  <a href="https://icml.cc/Conferences/2026"><img src="https://img.shields.io/badge/ICML-2026-1f6feb.svg" alt="ICML 2026"></a>
+  <a href="https://proceedings.mlr.press/v306/tan26h.html"><img src="https://img.shields.io/badge/ICML-2026-1f6feb.svg" alt="ICML 2026"></a>
   <a href="https://huggingface.co/spaces/mrtan/Sonar-TS-Demo"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Demo-Live-ff6f00.svg" alt="Live Demo"></a>
   <a href="https://huggingface.co/datasets/mrtan/NLQTSBench"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-mrtan%2FNLQTSBench-yellow.svg" alt="HuggingFace Dataset"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"></a>
 </p>
 
 <p align="center">
-  <b>Official implementation of the Sonar-TS paper (ICML 2026).</b>
-</p>
-
-## 🎬 Promo Video
-
-<p align="center">
-  <a href="docs/sonar-ts_promo.mp4">
-    <img src="docs/promo_teaser.gif" alt="Sonar-TS in action: ask in natural language, search by shape, verify every candidate, get the answer" width="90%">
-  </a>
-</p>
-
-<p align="center">
-  <sub>▶️ Click the teaser to watch the <a href="docs/sonar-ts_promo.mp4"><b>full 75-second promo with sound</b></a> — why querying time series in natural language is hard, how <i>Search-Then-Verify</i> solves it, and where it applies.</sub>
+  <b>This branch (<code>vldbj</code>) holds the extended journal version of Sonar-TS.</b><br>
+  The <code>main</code> branch holds the ICML 2026 conference version.
 </p>
 
 ## 📖 Introduction
 
-Time-series data is everywhere in industry. Common examples include temperature readings, stock prices, and factory sensor logs. When a non-expert wants to extract specific information from such data, they often hit a serious wall. For instance, they might ask: *"In the past month, on which day did the temperature rise sharply between 10 a.m. and 3 p.m. and then drop just as quickly?"* Today, no existing method can directly answer this kind of natural-language question over a real time-series database.
-
-Existing approaches fall short in two characteristic ways. Text-to-SQL methods are designed for relational data and cannot describe the shape-based morphology that defines time series (such as *plateau*, *rapid fall*, *fluctuating stable*). Time-series language models can answer questions over short windows, but they cannot scale to the database-scale histories that real applications need.
-
-<p align="center">
-  <img src="docs/figures/figure_nlq4tsdb.png" alt="NLQ4TSDB task" width="45%">
-</p>
-
-This leaves a real, unsolved problem: an interface where users describe time-series patterns in natural language and have them answered against the underlying database. We close that gap with three contributions:
-
-* **New problem.** We formally define the problem as **Natural Language Querying for Time Series Databases (NLQ4TSDB)**.
-* **New benchmark.** We release **NLQTSBench**, the first benchmark for standardized evaluation of NLQ4TSDB.
-* **Novel framework.** We propose **Sonar-TS**, a framework that solves NLQ4TSDB through a *Search-Then-Verify* pipeline.
-
-## 🗂️ NLQTSBench
-
-<p align="center">
-  <img src="docs/figures/figure_nlqtsbench.png" alt="NLQTSBench overview" width="90%">
-</p>
-
-**NLQTSBench** is the first standardized benchmark for NLQ4TSDB:
-
-* **Size & Diversity:** Contains **1,153 tasks** spanning **4 difficulty levels** and **9 sub-tasks**.
-* **Download:** Hosted on HuggingFace at [**mrtan/NLQTSBench**](https://huggingface.co/datasets/mrtan/NLQTSBench).
-
-## 🔍 Sonar-TS Framework
+Natural Language Querying for Time Series Databases (NLQ4TSDB) lets a user ask a time series database for shapes, anomalies, periods and trends in plain language, over histories that a language model cannot read. Sonar-TS answers such a query by *search, then verify*: a planner turns the query into a search over symbolic feature tables that are built offline, and a generator writes a script that verifies every candidate on the raw data.
 
 <p align="center">
   <img src="docs/figures/figure_sonar-ts.png" alt="Sonar-TS framework" width="90%">
 </p>
 
-Sonar-TS is a three-stage pipeline:
+## ✨ What this version adds
 
-1. **Offline data processing** builds multi-scale feature tables on top of the raw series.
-2. **Online querying** runs an LLM through Task Planning, Code Generation, and Execute. Its Experiences (e.g., skills) come from the *Prompt Cold Start* loop ([`cold_start/`](cold_start/)).
-3. **Post-processing** renders the verified result as a natural-language answer, with an optional visualization.
+* **MOSO**, a grounded morphological symbolization. Every segment of a window becomes a four-tuple ⟨amplitude, trend, rate, stability⟩ whose degrees (rapid, slow, steady, fluctuating) are decided relative to the window and the channel's history, so that the words of a query map onto the symbols of the index. Implementation: [`sonar_ts/symbolize.py`](sonar_ts/symbolize.py); the codebook that tells the LLM how to search it: [`sonar_ts/prompts/codebook_moso.txt`](sonar_ts/prompts/codebook_moso.txt). MOSO is the default configuration of this branch.
+* **A skill library selected per query.** *Prompt Cold Start* ([`cold_start_stream/`](cold_start_stream/)) distills skills from training queries without labels at run time, admits a skill only if it raises the score on held-out queries, and the planner selects the skills a query needs. The six skills used in the paper are in [`sonar_ts/skills/library/`](sonar_ts/skills/library/).
+* **NLQTSBench-Styles** ([`nlqtsbench/styles/`](nlqtsbench/styles/)): every query of NLQTSBench rewritten in four linguistic styles (lexical, technical, keyword, conversational) with the answer key unchanged.
+* **NLQTSBench-Lite** ([`nlqtsbench/lite/`](nlqtsbench/lite/)): 500 short-context queries in the same format, for time series models that read the series directly.
+
+## 🗂️ Benchmarks
+
+| Benchmark | Where | Queries | Notes |
+| --- | --- | --- | --- |
+| NLQTSBench | `nlqtsbench/tasks.json` | 1,153 | 4 levels, 9 tasks; raw CSVs from [HuggingFace](https://huggingface.co/datasets/mrtan/NLQTSBench) via `scripts/download_dataset.py` |
+| NLQTSBench-Styles | `nlqtsbench/styles/nlqtsbench_styles.json` | 1,153 × 4 styles | `question_styles` per task; `styles_provenance.json` keeps every rewrite attempt and the judge's verdict; the rewriting and judging specifications are `STYLE_SPEC.md` and `JUDGE_SPEC.md` |
+| NLQTSBench-Lite | `nlqtsbench/lite/tasks.json` + `nlqtsbench/lite/ts_data/` | 500 | self-contained, same task format |
+
+See [`nlqtsbench/README.md`](nlqtsbench/README.md) for the task format and the metrics.
 
 ## 🚀 Quick start
 
-### 1. Install dependencies
+### 1. Install
 
 ```bash
-git clone https://github.com/Atlamtiz/Sonar-TS.git
+git clone -b vldbj https://github.com/Atlamtiz/Sonar-TS.git
 cd Sonar-TS
 conda create -n sonarts python=3.11 -y && conda activate sonarts
 pip install -r requirements.txt
 ```
 
-### 2. Download the benchmark data from HuggingFace
-
-The raw CSVs (around 1.7 GB) live on HuggingFace. One command pulls them into the expected location:
+### 2. Data and API key
 
 ```bash
-python scripts/download_dataset.py
-```
-
-This places 1,153 CSVs under `nlqtsbench/ts_data/`. The benchmark spec (`nlqtsbench/tasks.json`) is already in this repository.
-
-### 3. Configure your DeepSeek API key
-
-The framework defaults to **DeepSeek** (`deepseek-v4-flash`) with **10 worker threads**, one dedicated API key per worker. With 10 keys, a full benchmark run takes about 25 minutes.
-
-Copy the template and paste your keys:
-
-```bash
+python scripts/download_dataset.py                       # raw CSVs -> nlqtsbench/ts_data/ (~1.7 GB)
 cp -n configs/deepseek_api-key.txt.example configs/deepseek_api-key.txt
-$EDITOR configs/deepseek_api-key.txt        # paste one key per line
+$EDITOR configs/deepseek_api-key.txt                     # one key per line; set concurrency.workers in configs/online.yaml accordingly
 ```
 
-If you have fewer than 10 keys, also lower `concurrency.workers` in `configs/online.yaml` to match.
-
-### 4. Build per-task databases + features (one-shot, ~10 min)
+### 3. Build the per-task databases and the feature tables
 
 ```bash
-python -m scripts.load_benchmark        # CSV → per-task database
-python -m scripts.build_index           # SAX feature tables per task
+python -m scripts.load_benchmark        # CSV -> per-task SQLite database
+python -m scripts.build_index           # statistics + SAX string (`sax`) + MOSO string (`sym`) per window
 ```
 
-> **Note:** For ease of reproduction, this release ships a lightweight **SQLite-based** implementation. The framework's data layer is backend-agnostic by design; production TSDBs (InfluxDB, TimescaleDB, etc.) can be supported by swapping the storage adapter.
+`configs/offline.yaml` sets the symbolization written into the `sym` column (`moso`, the default).
 
-### 5. Run the benchmark
+### 4. Run
 
 ```bash
 python main.py
 ```
 
-**Useful flags** (full list via `python main.py --help`):
+The defaults are the configuration of the paper: MOSO in the `sym` column, the codebook in `sonar_ts/prompts/`, and the six skills in `sonar_ts/skills/library/`. Useful flags: `--limit N`, `--workers N`, `--tasks`, `--databases`, `--out-dir`, `--figures` (`python main.py --help`).
 
-| Flag            | Effect                                                                                                           |
-| --------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `--limit N`   | Process only the first `N` tasks. Use for a quick smoke test before committing to the full ~25 min run.        |
-| `--workers N` | Override the worker thread count (default: 10, from `configs/online.yaml`). Lower this if you have fewer keys. |
-| `--figures`   | Also render one PNG per task (`output/figures/`). Adds ~15-20 min via a multi-process Kaleido pool.            |
-| `--rebuild`   | Discard `output/predict_partial.jsonl` and re-run every task. Use after editing prompts, skills, or configs.   |
-| `--out-dir `  | Write results to a custom directory instead of `./output/`.                                                    |
+The conference configuration (SAX in the `sax` column) is three variables away:
 
-Results print to the terminal as a paper-aligned per-category / per-level / overall table, and are written to `./output/`:
-
-```
-output/
-├── predict.json         submission-format predictions
-├── summary.json         per-subtask / per-category / overall scores
-└── per_task.json        one row per task with prediction + score
+```bash
+SONAR_SYMBOLIZATION=sax SONAR_SYMBOL_COLUMN=sax SONAR_INDEX_GUIDE_DIR=sonar_ts/prompts_sax python main.py
 ```
 
+### Reproduce the main results
 
+One script runs the five steps above and averages three runs into the Sonar-TS row of the main results table:
 
-### 🎯 Example outputs
+```bash
+bash scripts/reproduce_main_results.sh             # three runs, about 25 minutes each with 16 keys
+LIMIT=20 RUNS=1 bash scripts/reproduce_main_results.sh   # smoke test
+```
 
-Visualizations produced by `python main.py --figures`. Curated samples live in [`output/figures/examples/`](output/figures/examples/); the corresponding score breakdown is in [`output/summary.json`](output/summary.json) and [`output/per_task.json`](output/per_task.json).
+The runs are written to `runs/main/r1..r3` (`records.jsonl` per task, `table.md` per run); `scripts/aggregate_runs.py` prints the per-task, per-level and overall scores averaged over the runs.
 
-<p align="center">
-  <img src="output/figures/examples/L2_T1_Shape_Identification_00111.png" alt="Shape Identification example" width="49%">
-  <img src="output/figures/examples/L3_T1_Composite_Trend_00178.png" alt="Composite Trend example" width="49%">
-</p>
+### 5. Styles and Lite
 
-<p align="center">
-  <sub><b>Left:</b> Shape Identification. <b>Right:</b> Composite Trend.</sub>
-</p>
+```bash
+# one linguistic style of NLQTSBench-Styles, on the same databases
+python scripts/make_style_tasks.py --style conversational
+python main.py --tasks nlqtsbench/styles/tasks_conversational.json
+
+# NLQTSBench-Lite: the same three steps on another benchmark directory
+export SONAR_BENCHMARK_DIR=nlqtsbench/lite SONAR_DATABASES_DIR=databases_lite
+python -m scripts.load_benchmark && python -m scripts.build_index
+python main.py --tasks nlqtsbench/lite/tasks.json --databases databases_lite
+```
+
+## 🧠 Prompt Cold Start
+
+`cold_start_stream` builds a skill library from a stream of training queries: the reflector explains a failure, the drafter writes or patches a skill, the critic reviews it, and a skill enters the library only if it raises the score on the failed queries without lowering it on the ones already answered. `select.py` picks the library with the best validation score, and `eval.py` runs a library on a benchmark. Each tool documents its flags with `--help`:
+
+```bash
+python -m cold_start_stream.run --help
+python -m cold_start_stream.select --help
+python -m cold_start_stream.eval --help
+```
 
 ## 📁 Project structure
 
 ```
-Sonar-TS
+Sonar-TS (vldbj)
 ├── main.py
-├── requirements.txt
-├── LICENSE
-│
-├── configs/
-│ ├── online.yaml
-│ ├── offline.yaml
-│ ├── deepseek_api-key.txt.example
-│ └── deepseek_api-key.txt (gitignored)
-│
+├── configs/            online.yaml, offline.yaml, deepseek_api-key.txt.example
 ├── sonar_ts/
-│ ├── pipeline.py
-│ ├── planner.py
-│ ├── generator.py
-│ ├── executor.py
-│ ├── evaluator.py
-│ ├── llm.py
-│ ├── schema.py
-│ ├── storage.py
-│ ├── offline.py
-│ ├── prompts/
-│ ├── postprocess/
-│ └── skills/
-│
-├── scripts/
-│ ├── download_dataset.py
-│ ├── load_benchmark.py
-│ ├── build_index.py
-│ ├── run_benchmark.py
-│ └── render_samples.py
-│
-├── cold_start/
-│ ├── orchestrator.py
-│ ├── run_cold_start.py
-│ ├── download_train_data.py
-│ ├── agents/
-│ ├── train_data/
-│ └── discovered_skills/
-│
-├── nlqtsbench/
-│ ├── tasks.json
-│ ├── predict_perfect.json
-│ └── ts_data/ 
-│
-├── docs/figures/
-│
-├── databases/ 
-└── output/
+│   ├── pipeline.py, planner.py, generator.py, executor.py, evaluator.py
+│   ├── offline.py      feature tables: statistics, SAX, MOSO
+│   ├── symbolize.py    MOSO (and SAX, 1d-SAX, TFSAX for comparison)
+│   ├── index_guide.py  composes the index guide = shared text + codebook of the symbolization
+│   ├── prompts/        planner and generator templates, MOSO codebook (default)
+│   ├── prompts_sax/    SAX codebook of the conference configuration
+│   └── skills/library/ the six distilled skills
+├── cold_start_stream/  Prompt Cold Start
+├── scripts/            reproduce_main_results.sh, aggregate_runs.py, build_index, make_style_tasks, ...
+├── nlqtsbench/         tasks.json, styles/, lite/
+└── docs/figures/
 ```
-
-> See [`cold_start/README.md`](cold_start/README.md) and [`nlqtsbench/README.md`](nlqtsbench/README.md) for sub-system details.
 
 ## 📑 Citation
 
 ```bibtex
-@misc{tan2026sonartssearchthenverifynaturallanguage,
-      title={Sonar-TS: Search-Then-Verify Natural Language Querying for Time Series Databases}, 
-      author={Zhao Tan and Yiji Zhao and Shiyu Wang and Chang Xu and Yuxuan Liang and Xiping Liu and Shirui Pan and Ming Jin},
-      year={2026},
-      eprint={2602.17001},
-      archivePrefix={arXiv},
-      primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2602.17001}, 
+@inproceedings{tan2026sonarts,
+  title     = {{Sonar-TS}: Search-Then-Verify Natural Language Querying for Time Series Databases},
+  author    = {Tan, Zhao and Zhao, Yiji and Wang, Shiyu and Xu, Chang and Liang, Yuxuan and Liu, Xiping and Pan, Shirui and Jin, Ming},
+  booktitle = {International Conference on Machine Learning},
+  pages     = {118668--118690},
+  year      = {2026},
+  url       = {https://proceedings.mlr.press/v306/tan26h.html}
 }
 ```
 
@@ -220,15 +151,9 @@ Sonar-TS
 
 <p align="center">
   <img src="docs/figures/logos/griffith.png" alt="Griffith University" height="55">
-
-<img src="docs/figures/logos/jufe.png" alt="Jiangxi University of Finance and Economics" height="55">
-
-<img src="docs/figures/logos/ynu.png" alt="Yunnan University" height="55">
-
-<img src="docs/figures/logos/bytedance.png" alt="ByteDance" height="45">
-
-<img src="docs/figures/logos/microsoft-research.png" alt="Microsoft Research Asia" height="45">
-
-<img src="docs/figures/logos/hkust-gz.png" alt="HKUST (Guangzhou)" height="45">
+  <img src="docs/figures/logos/jufe.png" alt="Jiangxi University of Finance and Economics" height="55">
+  <img src="docs/figures/logos/ynu.png" alt="Yunnan University" height="55">
+  <img src="docs/figures/logos/bytedance.png" alt="ByteDance" height="45">
+  <img src="docs/figures/logos/microsoft-research.png" alt="Microsoft Research Asia" height="45">
+  <img src="docs/figures/logos/hkust-gz.png" alt="HKUST (Guangzhou)" height="45">
 </p>
-

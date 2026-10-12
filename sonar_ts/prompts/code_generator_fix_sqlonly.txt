@@ -1,0 +1,55 @@
+Your previous SQL query failed or its result could not be turned into the
+answer. Write a corrected query (SQL-ONLY setting: no Python is available).
+
+# WHAT WENT WRONG
+
+The previous status was: {error_status}
+
+Error / diagnostic message:
+
+{error_message}
+
+# RESULT RULES (unchanged)
+
+This task's eval_metric is **`{eval_metric}`**.
+
+| eval_metric | what your query must return |
+|-------------|-----------------------------|
+| rel_acc     | one row whose first numeric cell is the number |
+| hit         | one row whose first timestamp cell is the answer |
+| iou         | one row with two timestamp cells [start, end]; or one timestamp column over several rows |
+| set_f1      | one column of dates "YYYY-MM-DD", one per row, in order (at most 50 rows) |
+| report      | cannot be produced in this setting |
+
+A `shape_mismatch` with result `null` means the query returned no usable
+row or cell for this eval_metric.
+
+# CONTEXT (unchanged)
+
+## INDEX GUIDE
+
+{index_guide}
+
+## SCHEMA
+
+{schema}
+
+## EXPERIENCES
+
+{experiences}
+
+## QUESTION
+
+{question}
+
+## PLAN
+
+{plan}
+
+# PREVIOUS SQL
+
+```sql
+{previous_code}
+```
+
+Output the corrected query now (single fenced ```sql ... ``` block, no prose).

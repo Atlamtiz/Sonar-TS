@@ -1,7 +1,7 @@
 # Online querying configuration.
 
 llm:
-  model: "deepseek-v4-flash"
+  model: "deepseek-flash"
   base_url: "https://api.deepseek.com"
   temperature: 0.0
   max_tokens: 4096
@@ -42,4 +42,4 @@ shape_rules:
 
 concurrency:
   # Number of worker threads. Each thread holds one dedicated API key.
-  workers: 10
+  workers: 16

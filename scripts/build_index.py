@@ -30,7 +30,7 @@ def _features_present(db: TaskDatabase) -> bool:
 
 
 def _process_one(task_id: str, view_config: dict, alphabet: list[str],
-                 *, rebuild: bool) -> tuple[str, str, dict]:
+                 *, rebuild: bool, symbolization: str = "moso") -> tuple[str, str, dict]:
     if not db_path_for(task_id).exists():
         return task_id, "error", {"reason": "database missing — run load_benchmark first"}
 
@@ -42,7 +42,8 @@ def _process_one(task_id: str, view_config: dict, alphabet: list[str],
             return task_id, "skipped", counts
 
         raw_long = db.fetch_raw_long()
-        feats = compute_all_features(raw_long, view_config, alphabet)
+        feats = compute_all_features(raw_long, view_config, alphabet,
+                                     symbolization=symbolization)
         for table_name, df in feats.items():
             if not df.empty:
                 db.write_feature_table(table_name, df)
@@ -56,7 +57,7 @@ def _process_one(task_id: str, view_config: dict, alphabet: list[str],
 
 def main() -> None:
     p = argparse.ArgumentParser(prog="build_index",
-                                description="Compute SAX feature tables for every task database.")
+                                description="Compute the feature tables (statistics, SAX and MOSO strings) for every task database.")
     p.add_argument("--rebuild", action="store_true",
                    help="Recompute features even if all three tables are populated.")
     p.add_argument("--workers", type=int, default=None,
@@ -68,6 +69,7 @@ def main() -> None:
     config = _load_config()
     alphabet = config["sax"]["alphabet"]
     view_config = config["views"]
+    symbolization = str(config.get("symbolization", "moso")).lower()
     workers = args.workers if args.workers is not None else config.get("parallel", {}).get("workers", 8)
 
     with open(TASKS_JSON, encoding="utf-8") as f:
@@ -79,6 +81,7 @@ def main() -> None:
     print(f"Building features for {len(task_ids)} tasks")
     print(f"  alphabet  = {alphabet}")
     print(f"  views     = {list(view_config.keys())}")
+    print(f"  symbolization = {symbolization}")
     print(f"  workers   = {workers}  rebuild = {args.rebuild}")
 
     counts = {"built": 0, "skipped": 0, "error": 0}
@@ -86,7 +89,7 @@ def main() -> None:
 
     with ProcessPoolExecutor(max_workers=workers) as pool:
         futures = {pool.submit(_process_one, tid, view_config, alphabet,
-                               rebuild=args.rebuild): tid
+                               rebuild=args.rebuild, symbolization=symbolization): tid
                    for tid in task_ids}
         done = 0
         for fut in as_completed(futures):

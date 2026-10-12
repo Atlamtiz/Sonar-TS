@@ -26,6 +26,10 @@ pandas types must be converted: .item(), .tolist(), .strftime().
 
 # CONTEXT (unchanged)
 
+## INDEX GUIDE
+
+{index_guide}
+
 ## SCHEMA
 
 {schema}
@@ -54,8 +58,9 @@ pandas types must be converted: .item(), .tolist(), .strftime().
                       missing `.item()` on a numpy scalar, or a wrong
                       channel-column quoting in raw_data.
 - **timeout**       → your code is too slow. Avoid scanning all of
-                      raw_data in a Python loop; use SQL aggregation or
-                      filter via feature tables first.
+                      raw_data in a Python loop; shortlist windows with
+                      the indices first (see INDEX GUIDE), then verify
+                      only the shortlist; use vectorised pandas / numpy.
 - **format_invalid**→ you didn't print exactly one line of JSON to stdout,
                       or the JSON was missing the "_result" key.
 - **shape_mismatch**→ `_result`'s shape doesn't match the eval_metric

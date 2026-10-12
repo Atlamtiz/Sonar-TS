@@ -32,7 +32,7 @@ by the executor's shape check.
 | rel_acc     | a number (int or float)                              | `0.479` |
 | hit         | a single timestamp string "YYYY-MM-DD HH:MM:SS"      | `"2022-09-21 03:00:00"` |
 | iou         | a list of two timestamp strings [start, end]         | `["2022-09-11 19:15:00", "2022-09-20 13:00:00"]` |
-| set_f1      | a list of date strings, length ≤ 50                  | `["2023-07-31", "2023-11-08", "2023-03-29"]` |
+| set_f1      | a list of date strings, length ≤ 50                  | `["2018-04-09", "2018-08-21", "2018-12-03"]` |
 | report      | a dict (see schema below)                            | (see "REPORT SCHEMA") |
 
 ## REPORT SCHEMA (only when eval_metric == "report")
@@ -71,12 +71,11 @@ Python — otherwise json.dumps will fail:
 - raw_data is WIDE: column names ARE channel names. Query like:
       SELECT timestamp, "67" FROM raw_data WHERE timestamp BETWEEN ? AND ?
 
-- feature tables are LONG: filter via channel_id column. Example:
-      SELECT window_start FROM daily_feature
-       WHERE channel_id = '67' AND sax LIKE '%aaa%'
+- feature tables are LONG: filter via the channel_id column (a string).
 
-- If a SAX filter returns 0 rows, FALL BACK to scanning raw_data directly
-  rather than declaring failure.
+# INDEX GUIDE
+
+{index_guide}
 
 # SCHEMA
 

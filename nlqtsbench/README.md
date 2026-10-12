@@ -93,3 +93,11 @@ A submission is a JSON array of `{id, prediction}` records, one per row in `task
 
 All predictions are strings; the evaluator parses each one into the type its metric expects. Missing IDs are scored 0.
 
+
+## NLQTSBench-Styles
+
+`styles/nlqtsbench_styles.json` is the task list of NLQTSBench with one extra field, `question_styles`, holding the question rewritten in four linguistic styles: `lexical` (same sentence, everyday synonyms), `technical` (an analyst's phrasing), `keyword` (search-box fragment) and `conversational` (spoken register). Identifiers, numbers, dates, the output-format suffix and the ordered pattern of a query are preserved, so the original ground truth applies unchanged. `styles_provenance.json` records every rewrite attempt with the judge's verdict; `STYLE_SPEC.md` and `JUDGE_SPEC.md` are the rewriting and judging specifications. `python scripts/make_style_tasks.py --style <style>` writes a task file for one style.
+
+## NLQTSBench-Lite
+
+`lite/tasks.json` holds 500 short-context queries in the same format as `tasks.json`, with their series in `lite/ts_data/`. Set `SONAR_BENCHMARK_DIR=nlqtsbench/lite` (and a separate `SONAR_DATABASES_DIR`) to load and index it with the same scripts.

@@ -1,0 +1,24 @@
+You are tidying a SKILL LIBRARY. Each skill is a method document for one kind of
+question over time-series databases; a planner reads the one-line descriptions
+and loads the skill that fits a question. The library has grown over time and may
+contain skills that do the same job.
+
+Put the skills below into clusters. Skills belong in the same cluster ONLY IF a
+single document could replace them all: they answer the same kind of question
+(the user asks for the same kind of thing) with the same family of method. Skills
+that answer different kinds of question stay apart even if their wording or their
+output format is similar. When in doubt, keep skills apart. Most clusters will
+have one member.
+
+# OUTPUT — a single JSON object, nothing else
+
+{{
+  "clusters": [
+    {{"skill_ids": ["<id>", "..."], "shared_intent": "<one sentence: what these skills are for>"}}
+  ]
+}}
+
+Every skill id below must appear in exactly one cluster.
+
+# SKILLS
+{skills}

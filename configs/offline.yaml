@@ -1,6 +1,11 @@
 # Offline feature-table construction.
 # Mirrors the original Sonar-TS reference settings.
 
+# Morphological symbolization written into the `sym` column of every feature
+# table: "moso" (the four-tuple of the VLDBJ version, default) or "none".
+# The SAX string of the ICML version is always written into `sax`.
+symbolization: moso
+
 sax:
   # Symbolic alphabet (alpha = 5 by default).
   alphabet: ['a', 'b', 'c', 'd', 'e']

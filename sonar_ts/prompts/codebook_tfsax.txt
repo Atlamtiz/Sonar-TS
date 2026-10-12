@@ -1,0 +1,95 @@
+## CODEBOOK of the symbolic column `sym`   (symbolization: TFSAX)
+
+USE IT FOR every question about the FORM of the curve: rises, falls, flat stretches,
+peaks, dips, plateaus, steps, calm vs. choppy stretches, and sequences of these
+("rises, then stays flat, then falls"). When a question describes a shape or a
+trend pattern, search with this column FIRST, then verify on raw data.
+
+### 1. How the string is built
+
+The window is cut into equal segments and each segment becomes one TOKEN of 2
+characters:  [level][trend]
+    daily_feature     24 tokens, one per hour
+    monthly_feature   28-31 tokens, one per day
+    yearly_feature    12 tokens, one per month
+  level  a < b < c < d < e   the mean of the segment RELATIVE TO THE WINDOW ITSELF
+                             (z-score inside the window): a = far below the window's
+                             mean, c = near the mean, e = far above it
+  trend  A < B < C < D < E   the change from the first to the last point of the segment
+                             (window-relative scale), divided by the number of turning
+                             points inside the segment, read as an angle:
+                             A = steep fall, B = gentle fall, C = flat,
+                             D = gentle rise, E = steep rise.
+                             A segment that wiggles a lot gets a flatter trend letter.
+sym_len is the number of tokens; the string has 2 * sym_len characters. Token i
+(0-based) starts at character 2*i and covers one segment (1 hour / 1 day / 1 month): in a
+complete window, the segment that begins i segments after window_start. A window at the very
+start or end of the series can be incomplete: it has fewer tokens, and in the FIRST window of
+the series token 0 is the segment of the first timestamp of raw_data, not window_start.
+Consequences:
+- sym describes shape, not absolute level. An "e" in one window and an "e" in another
+  window are different values. Compare levels across windows with avg_val / min_val /
+  max_val, never with letters.
+- Every window is stretched to its own scale, so a window in which almost nothing
+  happens still shows the full range of symbols (noise looks like shape). Combine sym
+  with std_val or (max_val - min_val) to tell a real movement from noise.
+- A perfectly constant window is all "cC".
+
+### 2. How shapes look   (tokens separated by spaces here only for reading)
+
+    rise             levels climb and trend letters are D / E   "aD bE cE dD eC"
+    fall             levels descend and trend letters are A / B "eB dA cA bB aC"
+    flat / stable    the level stays, trend letter C, AT ANY LEVEL:
+                     "eC eC eC" after a rise, "aC aC aC" after a fall, "cC cC cC"
+    fast change      E (or A) tokens, the climb takes few tokens          "aC aE eE eC"
+    slow change      (reading hint) D (or B) tokens, or C tokens while the level climbs
+                                                                 "aC bD bC cD dC eC"
+    peak / spike     an E token, a high level, an A token       "bC bE eC bA bC"
+    dip / valley     an A token, a low level, an E token        "dC dA aC dE dC"
+    high plateau     a long run of d / e levels with C trends   "bE eC eC eC eC bA"
+    low plateau      a long run of a / b levels with C trends   "dA aC aC aC aC dE"
+    step up / down   a low run, one or two E tokens, a high run (or the reverse)
+    calm vs. choppy  (reading hint) trend letters stay C vs. jump between A / B and D / E
+A sequence of shapes is the patterns of its parts, in the order the question gives.
+
+### 3. How to search
+
+Two SQL functions are registered on `conn` (Python `re.search` semantics), in addition
+to LIKE and GLOB:  `sym REGEXP ?`  and  `regexp_like(sym, ?)`.
+
+    SELECT window_start, window_end, sym, slope, std_val FROM daily_feature
+     WHERE channel_id = ? AND window_start >= ? AND window_start < ?
+       AND sym REGEXP ?
+
+Writing patterns — one token = exactly 2 characters, level then trend. Write every slot
+as a character class and leave a slot as [a-e] or [A-E] when the question says nothing
+about it:
+      ANY token          [a-e][A-E]          skip whole tokens   (?:[a-e][A-E])*?
+      a rising segment   [a-e][DE]           steep rise          [a-e]E
+      a falling segment  [a-e][AB]           steep fall          [a-e]A
+      a flat segment     [a-e]C              a run of them       (?:[a-e]C){n,}
+- the level letters work exactly as in SAX: low = [ab][A-E], high = [de][A-E]; a rise is
+  "low levels somewhere before high levels":  [ab][A-E](?:[a-e][A-E])*?[de][A-E]
+- a flat part is a run of n tokens whose level stays, at WHATEVER level the previous part
+  ended:  (?:a[A-E]){n,}|(?:b[A-E]){n,}|(?:c[A-E]){n,}|(?:d[A-E]){n,}|(?:e[A-E]){n,}
+- join the parts of a multi-part shape with the whole-token skip, in the order of the
+  question; never with ".*", which can stop in the middle of a token;
+- the trend letter gives two degrees per direction (E vs. D, A vs. B). It can hint at
+  "rapid" vs. "slow", but there is no symbol for steady vs. fluctuating: measure words
+  of degree on raw data in the verify step.
+Keep the pattern LOOSE. sym is an approximation: the search must not lose true answers
+(recall first); exactness comes from the verify step. Do not anchor with ^ or $. Never write
+"\." — sym contains no dot, so an escaped dot matches nothing; use the character classes
+above instead of the wildcard. You can also read the sym strings into Python and use
+`re.finditer` to get the POSITION of a match; character position p is token p // 2,
+which maps back to time through the token rule above.
+
+### 4. Choosing the table
+
+Pick the table by the DURATION OF THE SHAPE ITSELF, never by the span of the question's
+time range: a shape lasting hours -> daily_feature (1 token = 1 hour); lasting days ->
+monthly_feature (1 token = 1 day); lasting months -> yearly_feature. "Days during 2020
+that show a rise, then a fall" asks for shapes INSIDE single days, so it is daily_feature
+searched over the year 2020 — the year is the search range, not the shape's duration. A shape must span at least 2-3 tokens to
+be visible. A shape can straddle a window border: when that matters, also look at the
+neighbouring windows, or verify on a raw slice that extends beyond the window.

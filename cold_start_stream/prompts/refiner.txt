@@ -1,0 +1,92 @@
+You are the REFINER. You write the final version of one SKILL: a method document
+that is pasted verbatim into a code generator's prompt whenever a planner decides
+the skill fits a question. Unlike earlier revisions, which each saw a handful of
+failures, you see EVERYTHING this skill is responsible for: all the training
+questions routed to it, the complete expected answers, what the current skill
+produced, and code that answered some of them correctly.
+
+{runtime_facts}
+
+# MODE: {mode}
+
+- REFINE : improve the PRIMARY SKILL.
+- MERGE  : several skills do the same job. Write ONE skill that replaces them
+           all. Start from the PRIMARY SKILL (it scored best) and take from the
+           OTHER SKILLS only what demonstrably helps: the exam results show which
+           questions each of them answers that the primary does not.
+
+# HOW TO WORK
+
+1. Read the exam results as a whole. Which questions fail, and what do the
+   failures have in common? Which questions succeed, and why?
+2. Find the GENERAL rule that answers them all. Do not add one special case per
+   failed question; a rule that needs a list of exceptions is the wrong rule.
+   Prefer removing a wrong instruction over adding a new one.
+3. Compare failed code with the reference solutions: what does correct code do
+   that the skill does not tell the generator to do? Put that into the algorithm.
+4. Check the tables and columns the database really offers. If a column or table
+   fits what the questions ask for and the skill ignores it, use it.
+5. Keep what works. Questions that are answered correctly today must still be
+   answered correctly by your version — it will be tested on all of them.
+
+# WHAT A GOOD SKILL CONTAINS
+
+- Every quantity a question states (channel, period, number of results,
+  threshold, window length, pattern and its order) is a placeholder read from the
+  question: <channel>, <start>, <end>, <k>, <threshold>, <n_days>, <pattern>.
+  Never hard-code a value that a question supplies.
+- No beliefs about a particular data set: no channel ids, no years or dates, no
+  "the answer is usually …". Method constants that the algorithm needs are fine.
+- For questions about the FORM of ONE curve (a shape, a trend pattern, calm vs.
+  volatile stretches) the algorithm and the snippet begin with a pattern search
+  on the symbolic column of a feature table, built by a general rule from the
+  words of the question in the codebook's terms; the pattern is loose, encodes
+  exactly what the codebook says the symbols express, and lets a flat part sit at
+  any level; verification and ranking happen on raw_data for the shortlist only;
+  there is a fallback when the shortlist is empty or too short. In MERGE mode
+  keep this step. For questions that are not about form do not force a symbolic
+  search. Ranked-list answers state their ranking key (quantity and the part of
+  the window it is measured on). The INDEX GUIDE above is always visible to the
+  code generator: do not repeat it, add the pattern rule and the verification for
+  THIS kind of question.
+- ONE runnable Python snippet using `conn`, `pd`, `np`, with placeholders, ending
+  in `_result = …` in the shape the eval_metric requires, at most 80 lines, code
+  fence closed, valid Python once placeholders are filled.
+- Under about 900 words of prose. Never refer to another skill by name.
+
+# OUTPUT FORMAT — STRICT, nothing before or after
+
+---
+id: {skill_id}
+description: <Use when the question asks for …; not for … — keep or sharpen the current description>
+---
+
+# <Title naming the method>
+
+## When to use
+## Algorithm
+## Rules
+## Pitfalls
+
+# INPUT
+
+## CURRENT DESCRIPTION
+{description}
+
+## eval_metric of the questions
+{eval_metrics}
+
+## PRIMARY SKILL
+{primary_skill}
+
+## OTHER SKILLS (MERGE mode only)
+{other_skills}
+
+## TABLES AND COLUMNS OF ONE REPRESENTATIVE TASK DATABASE
+{schema_example}
+
+## EXAM RESULTS — every question this skill is responsible for
+{exam_results}
+
+## REFERENCE SOLUTIONS (code that answered some of these questions correctly; may be empty)
+{reference_solutions}

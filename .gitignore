@@ -37,3 +37,9 @@ cold_start/traces/
 cold_start/summary.json
 cold_start/discovered_skills/
 
+
+# ─── VLDBJ version: generated per-style task files and Lite databases ───────
+nlqtsbench/styles/tasks_*.json
+databases_lite/
+
+.pytest_cache/

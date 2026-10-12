@@ -1,0 +1,44 @@
+The three feature tables (daily_feature, monthly_feature, yearly_feature) are
+precomputed INDICES over raw_data. One row summarises one (channel, window): one
+calendar day, one calendar month, or one calendar year. They tell you WHERE to
+look without reading the whole series. Filter them by channel_id and window_start.
+
+## What each index column is for
+
+  min_val, max_val   the extreme values inside the window.
+                     Use for: which windows can contain a value above / below a
+                     threshold; where a global maximum / minimum lies; the range
+                     (max_val - min_val) of a window.
+  avg_val            the mean level of the window.
+                     Use for: comparing levels ACROSS windows (which day / month is
+                     highest on average); level shifts between neighbouring windows.
+  std_val            the spread of the values inside the window.
+                     Use for: calm vs. volatile windows; a very small std_val means
+                     the window is flat.
+  slope              the net change of the fitted straight line from the start to the
+                     end of the window, in the data's own units. > 0 net rise, < 0
+                     net fall, near 0 no net change.
+                     Use for: the overall direction of a window; ranking windows by
+                     how much they rise or fall. slope says nothing about what happens
+                     INSIDE the window: a rise followed by an equal fall has slope ~ 0.
+  sym, sym_len       the SYMBOLIC column: the shape inside the window, written as a
+                     string of symbols. It is the only index that records the ORDER
+                     of what happens inside a window. How to read and search it is
+                     explained in the CODEBOOK below.
+
+<<CODEBOOK>>
+
+## Search, then verify
+
+1. SEARCH   shortlist candidate windows with the indices (a sym pattern, plus slope /
+            std_val / min_val / max_val filters where they help).
+2. VERIFY   read raw_data only for the shortlisted windows and compute the exact answer
+            there (exact boundaries, exact magnitudes, the ranking). Letters can hint
+            at degree (few vs. many letters), but words of degree — rapid, slow,
+            steady, fluctuating, highest, longest — are measured on raw data.
+3. FALLBACK if the search returns nothing, or fewer candidates than the question asks
+            for, the pattern was too strict: loosen it, and if needed scan raw_data
+            directly. Never return an empty answer because the index search was empty.
+For a plain aggregate over a known time range (min / max / mean / count), reading
+raw_data directly is fine. The indices exist for questions about shape, trend,
+volatility and events, where scanning everything is slow and error-prone.

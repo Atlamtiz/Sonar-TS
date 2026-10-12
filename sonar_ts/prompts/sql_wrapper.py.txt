@@ -1,0 +1,36 @@
+# SQL-only setting (ablation "w/o Verification"): the model wrote the SQL below;
+# this fixed wrapper runs it and converts the result to the answer shape.
+SQL = """__SQL__"""
+EVAL_METRIC = "__METRIC__"
+import json
+df = pd.read_sql_query(SQL, conn)
+def _is_ts(s):
+    try:
+        datetime.strptime(str(s)[:19], "%Y-%m-%d %H:%M:%S")
+        return True
+    except Exception:
+        return False
+def _ts(s):
+    return str(s)[:19]
+_result = None
+if EVAL_METRIC == "rel_acc":
+    vals = [v for v in df.iloc[0].tolist() if isinstance(v, (int, float)) and not isinstance(v, bool)] if len(df) else []
+    _result = float(vals[0]) if vals else None
+elif EVAL_METRIC == "hit":
+    vals = [v for v in df.iloc[0].tolist() if _is_ts(v)] if len(df) else []
+    _result = _ts(vals[0]) if vals else None
+elif EVAL_METRIC == "iou":
+    if len(df) == 1:
+        vals = [v for v in df.iloc[0].tolist() if _is_ts(v)]
+        _result = [_ts(vals[0]), _ts(vals[1])] if len(vals) >= 2 else None
+    elif len(df) > 1:
+        col = [v for v in df.iloc[:, 0].tolist() if _is_ts(v)]
+        _result = [_ts(min(col)), _ts(max(col))] if col else None
+elif EVAL_METRIC == "set_f1":
+    out = []
+    for v in (df.iloc[:, 0].tolist() if len(df) else []):
+        d = str(v)[:10]
+        if re.match(r"\d{4}-\d{2}-\d{2}$", d) and d not in out:
+            out.append(d)
+    _result = out[:50]
+print(json.dumps({"_result": _result}))

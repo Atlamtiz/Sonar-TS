@@ -28,10 +28,13 @@ CREATE TABLE IF NOT EXISTS {name} (
     slope         REAL,
     sax_len       INTEGER,
     sax           TEXT,
+    sym_len       INTEGER,
+    sym           TEXT,
     PRIMARY KEY (channel_id, window_start)
 );
 CREATE INDEX IF NOT EXISTS idx_{name}_ch  ON {name}(channel_id);
 CREATE INDEX IF NOT EXISTS idx_{name}_sax ON {name}(sax);
+CREATE INDEX IF NOT EXISTS idx_{name}_sym ON {name}(sym);
 """
 
 
@@ -44,15 +47,23 @@ def _quote_identifier(name: str) -> str:
 
 
 class TaskDatabase:
-    def __init__(self, task_id: str, *, db_path: Path | str | None = None):
+    def __init__(self, task_id: str, *, db_path: Path | str | None = None,
+                 read_only: bool = False):
         self.task_id = task_id
         self.db_path = Path(db_path) if db_path is not None else db_path_for(task_id)
+        self.read_only = read_only
         self._conn: sqlite3.Connection | None = None
 
     def connect(self) -> sqlite3.Connection:
         if self._conn is None:
-            self.db_path.parent.mkdir(parents=True, exist_ok=True)
-            self._conn = sqlite3.connect(self.db_path)
+            if self.read_only:
+                # `file:…?mode=ro` never creates the file and never writes a
+                # journal next to it — safe on a read-only database tree.
+                self._conn = sqlite3.connect(
+                    f"file:{self.db_path.as_posix()}?mode=ro", uri=True)
+            else:
+                self.db_path.parent.mkdir(parents=True, exist_ok=True)
+                self._conn = sqlite3.connect(self.db_path)
             self._conn.row_factory = sqlite3.Row
         return self._conn
 
@@ -176,9 +187,10 @@ class TaskDatabase:
         missing = expected - set(df.columns)
         if missing:
             raise ValueError(f"{name}: DataFrame missing columns {sorted(missing)}")
+        columns = sorted(expected) + [c for c in ("sym_len", "sym") if c in df.columns]
         conn = self.connect()
         conn.execute(f"DELETE FROM {name}")
-        df[list(expected)].to_sql(name, conn, if_exists="append", index=False)
+        df[columns].to_sql(name, conn, if_exists="append", index=False)
         conn.commit()
 
 
