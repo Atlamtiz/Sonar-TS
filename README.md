@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <b>Official implementation of the journal version of Sonar-TS</b> (branch <code>vldbj</code>).<br>
+  <b>Official implementation of the journal version of Sonar-TS</b> (branch <code>moso</code>).<br>
   The conference version (ICML 2026) lives on the <a href="https://github.com/Atlamtiz/Sonar-TS/tree/main"><code>main</code></a> branch.
 </p>
 
@@ -18,7 +18,7 @@
 Time series databases (TSDBs) store years of readings from sensors, markets and servers, and the questions users ask about them are about shape: *on which days did the level rise rapidly and then fall slowly*, *where is the longest plateau*, *which week behaved abnormally*. We call this problem **Natural Language Querying for Time Series Databases (NLQ4TSDB)**. Text-to-SQL cannot express a shape, and time series models that read the raw signal cannot read a history of millions of points.
 
 <p align="center">
-  <img src="docs/figures/figure_nlq4tsdb-vldbj.png" alt="The NLQ4TSDB problem" width="70%">
+  <img src="docs/figures/figure_nlq4tsdb-moso.png" alt="The NLQ4TSDB problem" width="70%">
 </p>
 
 **Sonar-TS** answers a query by *search, then verify*. Offline, the raw series is summarised into multi-scale feature tables, each window carrying statistics and a symbolic string of its shape. Online, an LLM planner turns the query into a search over those tables, and an LLM generator writes a script that verifies every candidate on the raw data. The LLM never reads the series itself, so the cost of a query does not grow with the history.
@@ -34,7 +34,7 @@ This version extends the conference paper in three ways:
 **NLQTSBench** has 1,153 queries over real series (CausalRivers, ETTm1, SMD) at four levels: basic operations, pattern recognition, semantic reasoning and insight synthesis. Every query has a verifiable ground truth: the series of Levels 2 to 4 contain a shape injected at a known place, and Level 1 is answered on the raw series as it is.
 
 <p align="center">
-  <img src="docs/figures/figure_nlqtsbench-vldbj.png" alt="The task taxonomy of NLQTSBench" width="95%">
+  <img src="docs/figures/figure_nlqtsbench-moso.png" alt="The task taxonomy of NLQTSBench" width="95%">
 </p>
 
 **NLQTSBench-Styles** rewrites every query in four linguistic styles, lexical, technical, keyword and conversational, with the answer key unchanged. Each rewrite was produced by an LLM against a specification and admitted by a deterministic checker plus an LLM judge; the full provenance is released.
@@ -54,7 +54,7 @@ The task format and the five metrics are described in [`nlqtsbench/README.md`](n
 ## 🔍 The Sonar-TS framework
 
 <p align="center">
-  <img src="docs/figures/figure_sonar-ts-vldbj.png" alt="The Sonar-TS framework" width="100%">
+  <img src="docs/figures/figure_sonar-ts-moso.png" alt="The Sonar-TS framework" width="100%">
 </p>
 
 1. **Offline data processing** builds three feature tables per channel, with one row per day, month and year. A row carries the window's statistics (min, max, mean, standard deviation, slope) and its MOSO string, so that a shape can be searched with SQL.
@@ -96,7 +96,7 @@ python -m cold_start_stream.eval --help
 ### 1. Install
 
 ```bash
-git clone -b vldbj https://github.com/Atlamtiz/Sonar-TS.git
+git clone -b moso https://github.com/Atlamtiz/Sonar-TS.git
 cd Sonar-TS
 conda create -n sonarts python=3.11 -y && conda activate sonarts
 pip install -r requirements.txt
@@ -156,7 +156,7 @@ python main.py --tasks nlqtsbench/lite/tasks.json --databases databases_lite
 ## 📁 Project structure
 
 ```
-Sonar-TS (vldbj)
+Sonar-TS (moso)
 ├── main.py                         run the benchmark
 ├── configs/                        online.yaml (LLM, executor, concurrency), offline.yaml (feature tables), API-key template
 ├── sonar_ts/
